@@ -13,15 +13,18 @@ export default async function handler(
 ) {
   try {
     const prisma = new PrismaClient()
-    let generated = null
     const { original, custom } = req.body
+    let generated = null
 
-    if (!original || original.trim() === "")
+    if (!original || original.trim() === "" || !isValidUrl(original))
       return res.status(400).json({ message: "Ingresa una url válida" })
 
     if (!custom) {
       generated = Math.random().toString(36).slice(2, 9)
     } else {
+      if (custom.trim() === "")
+        return res.status(400).json({ message: "Ingresa una url válida" })
+
       const check = await prisma.url.findUnique({
         where: { generated: custom },
       })
@@ -53,4 +56,14 @@ export default async function handler(
       .status(500)
       .json({ message: "Error al finalizar la solicitud, vuelve a intentar" })
   }
+}
+
+const isValidUrl = (urlString: string) => {
+  let url
+  try {
+    url = new URL(urlString)
+  } catch (e) {
+    return false
+  }
+  return url.protocol === "http:" || url.protocol === "https:"
 }
